@@ -62,13 +62,16 @@ async function buildAndWatch() {
       outfile: outfile,
     });
 
-    console.log('First build successful.');
+    if (prod)
+      console.log('Build successful.');
+    else
+      console.log('First build successful.');
 
     if (isWatching) {
       console.log('Watching for changes...');
-      await ctx.watch(); // Attiva il watch per monitorare le modifiche
+      await ctx.watch();
     } else {
-      await ctx.dispose(); // Rilascia risorse se non in modalità watch
+      await ctx.dispose();
     }
   } catch (error) {
     console.error('Error during build:', error);

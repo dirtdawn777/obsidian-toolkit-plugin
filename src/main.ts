@@ -1,30 +1,27 @@
-import { App, Notice, Plugin, Setting, PluginSettingTab } from 'obsidian';
+import { App, Plugin, Setting, PluginSettingTab } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
-  feature: string;
+export interface ToolkitSettings {
+  googleCloudApiKey: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-  feature: "default",
+const DEFAULT_SETTINGS: ToolkitSettings = {
+  googleCloudApiKey: "",
 };
 
-export default class MyPlugin extends Plugin {
-  settings: MyPluginSettings = DEFAULT_SETTINGS;
+export default class ToolkitPlugin extends Plugin {
+  settings: ToolkitSettings = DEFAULT_SETTINGS;
 
   async onload() {
+    console.log('Loading Toolkit plugin');
     await this.loadSettings();
 
-    this.addRibbonIcon('dice', 'Sample Plugin', (_evt: MouseEvent) => {
-      // Called when the user clicks the icon.
-      new Notice('This is a notice!');
-    });
-
-    this.addSettingTab(new SampleSettingTab(this.app, this));
+    this.addSettingTab(new ToolkitSettingTab(this.app, this));
   }
 
   onunload() {
+    console.log('Unloading Toolkit plugin');
   }
 
   async loadSettings() {
@@ -36,10 +33,10 @@ export default class MyPlugin extends Plugin {
   }
 }
 
-class SampleSettingTab extends PluginSettingTab {
-  plugin: MyPlugin;
+class ToolkitSettingTab extends PluginSettingTab {
+  plugin: ToolkitPlugin;
 
-  constructor(app: App, plugin: MyPlugin) {
+  constructor(app: App, plugin: ToolkitPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -50,13 +47,13 @@ class SampleSettingTab extends PluginSettingTab {
     containerEl.empty();
 
     new Setting(containerEl)
-      .setName('Setting #1')
-      .setDesc('It\'s a secret')
+      .setName('Google Cloud API Key')
+      .setDesc("It gives your app permission to access and use YouTube's features in a controlled way.")
       .addText(text => text
-        .setPlaceholder('Enter your secret')
-        .setValue(this.plugin.settings.feature)
-        .onChange(async (value) => {
-          this.plugin.settings.feature = value;
+        .setPlaceholder('Enter your Google Cloud API Key')
+        .setValue(this.plugin.settings.googleCloudApiKey)
+        .onChange(async (value): Promise<void> => {
+          this.plugin.settings.googleCloudApiKey = value;
           await this.plugin.saveSettings();
         }));
   }

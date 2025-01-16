@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-basic-plugin",
+  "name": "Obsidian Basic Plugin",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "This is a sample plugin for Obsidian.",
+  "author": "DirtDawn",
+  "authorUrl": "https://github.com/dirtdawn777/",
+  "isDesktopOnly": false
+}

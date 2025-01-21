@@ -88,11 +88,11 @@ class YoutubeApi {
 
     const videos = response.data.items || [];
     const videoDetails: VideoDetails[] = [];
-
-    videos.forEach(async (video) => {
+    
+    for (const video of videos) {
       const videoId = video.id || '';
       const videoLink = `https://www.youtube.com/watch?v=${videoId}`;
-
+    
       const videoDetail: VideoDetails = {
         videoId: videoId,
         link: videoLink,
@@ -108,11 +108,17 @@ class YoutubeApi {
           await this.fetchVideoSubtitles(videoLink, video.snippet?.defaultAudioLanguage ?? "en") :
           undefined,
       };
-
+    
       videoDetails.push(videoDetail);
-      console.log(videoDetail.transcript?.length);
+    }
+    
+    console.log('videoDetails.length: ' + videoDetails.length);
+    
+    videoDetails.forEach((video) => {
+      if (video.transcript) {
+        console.log(video.transcript.length);
+      }
     });
-
     return videoDetails;
   };
 
@@ -297,7 +303,6 @@ class YoutubeApi {
       }
 
       const captionTracks = JSON.parse(`[${transcriptMatch[1]}]`);
-      console.log(captionTracks);
       let languageTrack = captionTracks.find((track: CaptionTrack) => track.languageCode === language);
 
       if (!languageTrack && language !== "en") {

@@ -1,0 +1,11 @@
+async function FetchYuotubeVideosDetails(tp, videoIds, fetchTranscript) {
+  let plugin = tp.app.plugins.plugins["toolkit-obsidian"];
+  let vd = await plugin.youtubeApi.fetchVideosDetails(videoIds, fetchTranscript);
+
+  return vd;
+
+}
+//https://www.youtube.com/watch?v=5Z69nvwd-dE
+module.exports = FetchYuotubeVideosDetails
+
+

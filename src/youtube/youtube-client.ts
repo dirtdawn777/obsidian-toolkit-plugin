@@ -111,14 +111,6 @@ class YoutubeApi {
     
       videoDetails.push(videoDetail);
     }
-    
-    console.log('videoDetails.length: ' + videoDetails.length);
-    
-    videoDetails.forEach((video) => {
-      if (video.transcript) {
-        console.log(video.transcript.length);
-      }
-    });
     return videoDetails;
   };
 
@@ -232,7 +224,6 @@ class YoutubeApi {
       const videos: VideoData[] = [];
       if (videoRes.data.items) {
         videoRes.data.items.forEach((item) => {
-          console.log(item.snippet?.title);
           if (
             (item.snippet?.title &&
               item.snippet.title.includes(queryDescr)) ||

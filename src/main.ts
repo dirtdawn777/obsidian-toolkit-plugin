@@ -13,7 +13,6 @@ export default class ToolkitPlugin extends Plugin {
     await this.loadSettings();
 
     this.addSettingTab(new ToolkitSettingTab(this.app, this));
-    // setupToolkitApi(this);
     this.youtubeApi = new YoutubeApi(this);
   }
 

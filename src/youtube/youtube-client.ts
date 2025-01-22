@@ -1,6 +1,8 @@
 import type ToolkitPlugin from "../main";
 import { requestUrl } from "obsidian";
 import { youtube_v3 } from '@googleapis/youtube';
+import * as cheerio from 'cheerio';
+import { fetchUrl } from "../web/web-client";
 
 export interface VideoDetails {
   videoId: string;
@@ -45,7 +47,7 @@ class YoutubeApi {
   }
 
   fetchVideoDetails = async (videoUrl: string): Promise<VideoDetails | null> => {
-    const videoId = this.extractVideoId(videoUrl);
+    const videoId = this.getVideoId(videoUrl);
     if (!videoId) {
       throw new Error('Invalid YouTube video URL');
     }
@@ -276,7 +278,7 @@ class YoutubeApi {
 
   fetchVideoSubtitles = async (videoUrl: string, language: string): Promise<TranscriptChunk[] | null> => {
     try {
-      const videoId = this.extractVideoId(videoUrl);
+      const videoId = this.getVideoId(videoUrl);
       if (!videoId) {
         console.error('Invalid video ID');
         return null;
@@ -374,10 +376,46 @@ class YoutubeApi {
     return videoIds;
   }
 
-  private extractVideoId(url: string): string | null {
-    const match = url.match(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/);
-    return match ? match[1] : null;
-  }
+  getChannelId = async (url: string) => {
+    if (this.checkUrl(url)) {
+      const responseText = await fetchUrl(url);
+      const $ = cheerio.load(responseText);
+
+      const id = $('meta[itemprop="identifier"]').attr('content');
+      if (id) return id;
+    } else {
+      throw new Error(`"${url}" is not a YouTube url.`);
+    }
+
+    throw new Error(`Unable to get "${url}" channel id.`);
+  };
+
+  getVideoId = async (url: string) => {
+    if (this.checkUrl(url)) {
+      const responseText = await fetchUrl(url);
+      const $ = cheerio.load(responseText);
+      const id = $('meta[itemprop="identifier"]').attr('content');
+      if (id) return id;
+    } else {
+      throw new Error(`"${url}" is not a YouTube url.`);
+    }
+
+    throw new Error(`Unable to get "${url}" video id.`);
+  };
+
+  getPlaylistId = async (url: string) => {
+    if (this.checkUrl(url)) {
+      const responseText = await fetchUrl(url);
+      const $ = cheerio.load(responseText);
+
+      const id = $('meta[itemprop="playlistId"]').attr('content') || new URL(url).searchParams.get('list');
+      if (id) return id;
+    } else {
+      throw new Error(`"${url}" is not a YouTube url.`);
+    }
+
+    throw new Error(`Unable to get "${url}" playlist id.`);
+  };
 
   // Helper function to parse YouTube duration (e.g., PT1H2M3S) to seconds
   private parseDuration(duration: string): number {
@@ -426,6 +464,10 @@ class YoutubeApi {
       console.log(e);
       return [];
     }
+  }
+
+  private checkUrl(url: string) {
+     return url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1;
   }
 }
 

@@ -14,6 +14,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.17.0",
+    "@gonetone/get-youtube-id-by-url": "^2.0.0",
     "@googleapis/youtube": "^20.0.0",
     "@types/node": "^22.10.5",
     "@typescript-eslint/eslint-plugin": "8.19.1",
@@ -25,7 +26,6 @@
     "gts": "^6.0.2",
     "obsidian": "latest",
     "tslib": "2.8.1",
-    "typescript": "^5.7.2",
-    "youtubei.js": "^12.2.0"
+    "typescript": "^5.7.2"
   }
 }

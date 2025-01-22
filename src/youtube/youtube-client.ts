@@ -47,7 +47,7 @@ class YoutubeApi {
   }
 
   fetchVideoDetails = async (videoUrl: string): Promise<VideoDetails | null> => {
-    const videoId = this.getVideoId(videoUrl);
+    const videoId = await this.getVideoId(videoUrl);
     if (!videoId) {
       throw new Error('Invalid YouTube video URL');
     }
@@ -278,7 +278,7 @@ class YoutubeApi {
 
   fetchVideoSubtitles = async (videoUrl: string, language: string): Promise<TranscriptChunk[] | null> => {
     try {
-      const videoId = this.getVideoId(videoUrl);
+      const videoId = await this.getVideoId(videoUrl);
       if (!videoId) {
         console.error('Invalid video ID');
         return null;

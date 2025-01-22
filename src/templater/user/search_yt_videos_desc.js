@@ -3,8 +3,7 @@ async function SearchYoutubeVideosDesc(tp, queryTitle, maxResultsTitle, queryDes
   let vd = await plugin.youtubeApi.searchYoutubeVideosDescription(queryTitle, maxResultsTitle, queryDesc, maxResultsDesc, language, orderBy);
 
   return vd;
-
 }
-//https://www.youtube.com/watch?v=5Z69nvwd-dE
+
 module.exports = SearchYoutubeVideosDesc
 

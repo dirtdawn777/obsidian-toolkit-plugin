@@ -18,6 +18,22 @@ export interface VideoDetails {
   transcript: TranscriptChunk[] | null | undefined;
 }
 
+export interface PlaylistDetails {
+  title: string;
+  description: string;
+  itemCount: number;
+  videoIds: string[];
+}
+
+export interface ChannelDetails {
+  title: string;
+  description: string;
+  subscriberCount: number;
+  videoCount: number;
+  uploadsPlaylistId: string;
+  videoIds: string[];
+}
+
 export interface VideoData {
   videoId: string;
   title: string;
@@ -351,6 +367,54 @@ class YoutubeApi {
     return videoIds;
   }
 
+  fetchPlaylistDetails = async (playlistId: string): Promise<PlaylistDetails> => {
+    const videoIds: string[] = [];
+    let nextPageToken: string | undefined;
+    let playlistTitle = '';
+    let playlistDescription = '';
+    let totalItemCount = 0;
+  
+    do {
+      const res = await this.youtube.playlistItems.list({
+        part: ['snippet'],
+        playlistId,
+        maxResults: 50,
+        pageToken: nextPageToken,
+      });
+  
+      if (!nextPageToken) {
+        const playlistDetails = await this.youtube.playlists.list({
+          part: ['snippet', 'contentDetails'],
+          id: [playlistId],
+        });
+  
+        const playlistData = playlistDetails.data.items?.[0];
+        if (playlistData?.snippet) {
+          playlistTitle = playlistData.snippet.title || '';
+          playlistDescription = playlistData.snippet.description || '';
+        }
+        if (playlistData?.contentDetails) {
+          totalItemCount = playlistData.contentDetails.itemCount || 0;
+        }
+      }
+  
+      res.data.items?.forEach((item) => {
+        if (item.snippet?.resourceId?.videoId) {
+          videoIds.push(item.snippet.resourceId.videoId);
+        }
+      });
+  
+      nextPageToken = res.data.nextPageToken ?? undefined;
+    } while (nextPageToken);
+  
+    return {
+      title: playlistTitle,
+      description: playlistDescription,
+      itemCount: totalItemCount,
+      videoIds: videoIds,
+    };
+  };
+  
   fetchChannelVideoIds = async (channelId: string): Promise<string[]> => {
     const videoIds: string[] = [];
     let pageToken: string | undefined;
@@ -376,6 +440,62 @@ class YoutubeApi {
     return videoIds;
   }
 
+  fetchChannelDetails = async (channelId: string): Promise<ChannelDetails> => {
+    const videoIds: string[] = [];
+    let nextPageToken: string | undefined;
+    let uploadsPlaylistId = '';
+    let channelTitle = '';
+    let channelDescription = '';
+    let subscriberCount = 0;
+    let videoCount = 0;
+  
+    const channelDetails = await this.youtube.channels.list({
+      part: ['snippet', 'statistics', 'contentDetails'],
+      id: [channelId],
+    });
+  
+    const channelData = channelDetails.data.items?.[0];
+    if (channelData?.snippet) {
+      channelTitle = channelData.snippet.title || '';
+      channelDescription = channelData.snippet.description || '';
+    }
+    if (channelData?.statistics) {
+      subscriberCount = parseInt(channelData.statistics.subscriberCount || '0', 10);
+      videoCount = parseInt(channelData.statistics.videoCount || '0', 10);
+    }
+    if (channelData?.contentDetails) {
+      uploadsPlaylistId = channelData.contentDetails.relatedPlaylists?.uploads || '';
+    }
+  
+    if (uploadsPlaylistId) {
+      do {
+        const res = await this.youtube.playlistItems.list({
+          part: ['snippet'],
+          playlistId: uploadsPlaylistId,
+          maxResults: 50,
+          pageToken: nextPageToken,
+        });
+  
+        res.data.items?.forEach((item) => {
+          if (item.snippet?.resourceId?.videoId) {
+            videoIds.push(item.snippet.resourceId.videoId);
+          }
+        });
+  
+        nextPageToken = res.data.nextPageToken ?? undefined;
+      } while (nextPageToken);
+    }
+  
+    return {
+      title: channelTitle,
+      description: channelDescription,
+      subscriberCount,
+      videoCount,
+      uploadsPlaylistId,
+      videoIds,
+    };
+  };
+  
   getChannelId = async (url: string) => {
     if (this.checkUrl(url)) {
       const responseText = await fetchUrl(url);

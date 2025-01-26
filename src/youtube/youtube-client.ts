@@ -1,5 +1,5 @@
 import type ToolkitPlugin from "../main";
-import { requestUrl } from "obsidian";
+import { Notice, requestUrl } from "obsidian";
 import { youtube_v3 } from '@googleapis/youtube';
 import * as cheerio from 'cheerio';
 import { fetchUrl } from "../web/web-client";
@@ -62,14 +62,14 @@ class YoutubeApi {
     this.youtube = new youtube_v3.Youtube({ auth: this.plugin.settings.googleCloudApiKey });
   }
 
-  fetchVideoDetails = async (videoUrl: string): Promise<VideoDetails | null> => {
+  fetchVideoDetails = async (videoUrl: string, fetchTranscript: boolean = false): Promise<VideoDetails | null> => {
     const videoId = await this.getVideoId(videoUrl);
     if (!videoId) {
       throw new Error('Invalid YouTube video URL');
     }
 
     const response = await this.youtube.videos.list({
-      part: ['snippet'],
+      part: ['snippet', 'contentDetails'],
       id: [videoId],
     });
 
@@ -86,15 +86,18 @@ class YoutubeApi {
       title: video.snippet?.title || '',
       description: video.snippet?.description || '',
       publishedAt: video.snippet?.publishedAt || '',
+      duration: this.formatDuration(video.contentDetails?.duration ?? "PT0S") || '',
       channelTitle: video.snippet?.channelTitle || '',
       defaultLanguage: video.snippet?.defaultLanguage || '',
       defaultAudioLanguage: video.snippet?.defaultAudioLanguage || '',
       thumbnailUrl: video.snippet?.thumbnails?.maxres?.url || '',
-      transcript: undefined,
+      transcript: fetchTranscript ?
+        await this.fetchVideoSubtitles(videoLink, video.snippet?.defaultAudioLanguage ?? "en") :
+        undefined
     };
   }
 
-  fetchVideosDetails = async (videoIds: string[], fetchTranscript: boolean = false): Promise<VideoDetails[]> => {
+  fetchVideosDetails = async (videoIds: string[], fetchTranscript: boolean = false, notifyProgress: boolean = true): Promise<VideoDetails[]> => {
     if (videoIds.length === 0) {
       return [];
     }
@@ -106,11 +109,11 @@ class YoutubeApi {
 
     const videos = response.data.items || [];
     const videoDetails: VideoDetails[] = [];
-    
+
     for (const video of videos) {
       const videoId = video.id || '';
       const videoLink = `https://www.youtube.com/watch?v=${videoId}`;
-    
+
       const videoDetail: VideoDetails = {
         videoId: videoId,
         link: videoLink,
@@ -126,8 +129,10 @@ class YoutubeApi {
           await this.fetchVideoSubtitles(videoLink, video.snippet?.defaultAudioLanguage ?? "en") :
           undefined,
       };
-    
+
       videoDetails.push(videoDetail);
+      if (notifyProgress)
+        new Notice(`${videoDetail.title} fetched`);
     }
     return videoDetails;
   };
@@ -373,7 +378,7 @@ class YoutubeApi {
     let playlistTitle = '';
     let playlistDescription = '';
     let totalItemCount = 0;
-  
+
     do {
       const res = await this.youtube.playlistItems.list({
         part: ['snippet'],
@@ -381,13 +386,13 @@ class YoutubeApi {
         maxResults: 50,
         pageToken: nextPageToken,
       });
-  
+
       if (!nextPageToken) {
         const playlistDetails = await this.youtube.playlists.list({
           part: ['snippet', 'contentDetails'],
           id: [playlistId],
         });
-  
+
         const playlistData = playlistDetails.data.items?.[0];
         if (playlistData?.snippet) {
           playlistTitle = playlistData.snippet.title || '';
@@ -397,16 +402,16 @@ class YoutubeApi {
           totalItemCount = playlistData.contentDetails.itemCount || 0;
         }
       }
-  
+
       res.data.items?.forEach((item) => {
         if (item.snippet?.resourceId?.videoId) {
           videoIds.push(item.snippet.resourceId.videoId);
         }
       });
-  
+
       nextPageToken = res.data.nextPageToken ?? undefined;
     } while (nextPageToken);
-  
+
     return {
       title: playlistTitle,
       description: playlistDescription,
@@ -414,7 +419,7 @@ class YoutubeApi {
       videoIds: videoIds,
     };
   };
-  
+
   fetchChannelVideoIds = async (channelId: string): Promise<string[]> => {
     const videoIds: string[] = [];
     let pageToken: string | undefined;
@@ -448,12 +453,12 @@ class YoutubeApi {
     let channelDescription = '';
     let subscriberCount = 0;
     let videoCount = 0;
-  
+
     const channelDetails = await this.youtube.channels.list({
       part: ['snippet', 'statistics', 'contentDetails'],
       id: [channelId],
     });
-  
+
     const channelData = channelDetails.data.items?.[0];
     if (channelData?.snippet) {
       channelTitle = channelData.snippet.title || '';
@@ -466,7 +471,7 @@ class YoutubeApi {
     if (channelData?.contentDetails) {
       uploadsPlaylistId = channelData.contentDetails.relatedPlaylists?.uploads || '';
     }
-  
+
     if (uploadsPlaylistId) {
       do {
         const res = await this.youtube.playlistItems.list({
@@ -475,17 +480,17 @@ class YoutubeApi {
           maxResults: 50,
           pageToken: nextPageToken,
         });
-  
+
         res.data.items?.forEach((item) => {
           if (item.snippet?.resourceId?.videoId) {
             videoIds.push(item.snippet.resourceId.videoId);
           }
         });
-  
+
         nextPageToken = res.data.nextPageToken ?? undefined;
       } while (nextPageToken);
     }
-  
+
     return {
       title: channelTitle,
       description: channelDescription,
@@ -495,7 +500,7 @@ class YoutubeApi {
       videoIds,
     };
   };
-  
+
   getChannelId = async (url: string) => {
     if (this.checkUrl(url)) {
       const responseText = await fetchUrl(url);
@@ -587,7 +592,7 @@ class YoutubeApi {
   }
 
   private checkUrl(url: string) {
-     return url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1;
+    return url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1;
   }
 }
 

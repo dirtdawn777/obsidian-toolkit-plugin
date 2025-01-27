@@ -4,11 +4,15 @@ import { DEFAULT_SETTINGS } from './settings/settings'
 import { ToolkitSettingTab } from "./settings/SettingsTab";
 import YoutubeApi from "./youtube/youtube-client";
 import FileApi from "./file/file";
+import TextApi from "./text/text";
+import FormApi from "./form/form";
 
 export default class ToolkitPlugin extends Plugin {
   settings: ToolkitSettings = DEFAULT_SETTINGS;
   public youtubeApi!: YoutubeApi;
   public fileApi!: FileApi;
+  public textApi!: TextApi;
+  public formApi!: FormApi;
 
   async onload() {
     console.log('Loading Toolkit plugin');
@@ -17,6 +21,8 @@ export default class ToolkitPlugin extends Plugin {
     this.addSettingTab(new ToolkitSettingTab(this.app, this));
     this.youtubeApi = new YoutubeApi(this);
     this.fileApi = new FileApi(this.app);
+    this.textApi = new TextApi(this.app);
+    this.formApi = new FormApi(this.app, this);
   }
 
   onunload() {

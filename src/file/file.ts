@@ -1,4 +1,4 @@
-import { App, TFile, TFolder, Notice, Vault, normalizePath } from 'obsidian';
+import { App, TFile, TFolder, Notice } from 'obsidian';
 
 
 class FileApi {
@@ -6,34 +6,6 @@ class FileApi {
 
   constructor(app: App) {
     this.app = app;
-  }
-
-  loadForm = async (formName: string): Promise<string | null> => {
-    const fileName = `${formName}.json`;
-    const filePath = normalizePath(fileName);
-    const vault: Vault = this.app.vault;
-
-    try {
-      const file = vault.getAbstractFileByPath(filePath);
-      if (!file) {
-        throw new Error(`File "${fileName}" does not exists.`);
-      }
-      if (!(file instanceof TFile)) {
-        throw new Error(`File "${fileName}" is not a valid file.`);
-      }
-
-      const fileContent = await vault.read(file as TFile);
-      try {
-        const formDef = JSON.parse(fileContent);
-        return formDef;
-      } catch (error) {
-        console.error(`Error during reading file "${fileName}":`, error);
-        throw new Error(`File "${fileName}" is not a valid JSON file.`);
-      }
-    } catch (error) {
-      console.error(`Error during reading file "${fileName}":`, error);
-      throw new Error(`Error during reading file "${fileName}".`);
-    }
   }
 
   appendExtension = (path: string, extension: string): string => {
@@ -76,14 +48,14 @@ class FileApi {
     return data;
   }
 
-  readJson = async (path: string): Promise<unknown | null> => {
+  readJson = async<T> (path: string): Promise<T | null> => {
     const file = this.app.metadataCache.getFirstLinkpathDest(this.appendExtension(path, "md"), "");
     if (file)
-      return await JSON.parse(await this.app.vault.read(file));
+      return await JSON.parse(await this.app.vault.read(file)) as T;
     return null;
   }
 
-  writeJson = async (path: string, data: unknown): Promise<void> => {
+  writeJson = async<T> (path: string, data: T): Promise<void> => {
     const file = this.app.metadataCache.getFirstLinkpathDest(this.appendExtension(path, "md"), "");
     if (file)
       await this.app.vault.modify(file, JSON.stringify(data, null, 2));

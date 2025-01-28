@@ -1,5 +1,9 @@
 import { App, TFile, TFolder, Notice } from 'obsidian';
 
+export interface FileContent {
+  file: TFile;
+  content: string;
+}
 
 class FileApi {
   private app: App;
@@ -30,6 +34,25 @@ class FileApi {
       }
     }
     return folder;
+  }
+
+  listFolder = async (folder: TFolder | string): Promise<TFile[]> => {
+    const f = (folder instanceof TFolder) ? folder : this.app.vault.getFolderByPath(folder);
+    return f?.children.filter((file) => file instanceof TFile) as TFile[];
+  }
+
+  readFolder = async (folder: TFolder | string): Promise<FileContent[]> => {
+    const f = (folder instanceof TFolder) ? folder : this.app.vault.getFolderByPath(folder);
+    const files = f?.children || [];
+  
+    const fileContents = await Promise.all(files.flatMap(async (file) => {
+      if (file instanceof TFile) {
+        const content = await this.app.vault.cachedRead(file);
+        return { file, content };
+      }
+    }));
+  
+    return fileContents.filter((content): content is FileContent => content !== undefined);
   }
 
   processFolder = async<T>(folder: TFolder | string, process: (file: TFile) => Promise<T | null>): Promise<T[]> => {

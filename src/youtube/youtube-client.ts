@@ -541,6 +541,23 @@ class YoutubeApi {
 
     throw new Error(`Unable to get "${url}" playlist id.`);
   };
+  
+  generateMarkdownTimestampLinks = (description: string, videoUrl: string): string => {
+    // Regular expression to match timestamps in the format HH:MM:SS or MM:SS
+    const timestampRegex = /\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b/g;
+  
+    // Replace each timestamp with a markdown link
+    return description.replace(timestampRegex, (match, minutes, seconds, hours) => {
+      // Convert the timestamp to seconds
+      let totalSeconds = parseInt(minutes) * 60 + parseInt(seconds);
+      if (hours) {
+        totalSeconds += parseInt(hours) * 3600;
+      }
+  
+      // Create the markdown link
+      return `[${match}](${videoUrl}?t=${totalSeconds})`;
+    });
+  }
 
   // Helper function to parse YouTube duration (e.g., PT1H2M3S) to seconds
   private parseDuration(duration: string): number {

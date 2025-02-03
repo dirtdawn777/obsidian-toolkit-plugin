@@ -92,12 +92,50 @@ class YoutubeApi {
       defaultAudioLanguage: video.snippet?.defaultAudioLanguage || '',
       thumbnailUrl: video.snippet?.thumbnails?.maxres?.url || '',
       transcript: fetchTranscript ?
-        await this.fetchVideoSubtitles(videoLink, video.snippet?.defaultAudioLanguage ?? "en") :
+        await this.fetchVideoTranscript(videoLink, video.snippet?.defaultAudioLanguage ?? "en") :
         undefined
     };
   }
 
-  fetchVideosDetails = async (videoIds: string[], fetchTranscript: boolean = false, notifyProgress: boolean = true): Promise<VideoDetails[]> => {
+  fetchPlaylistVideosDetails = async (url: string, startDate?: Date, endDate?: Date,
+    fetchTranscript: boolean = false, notifyProgress: boolean = true): Promise<VideoDetails[]> => {
+    return this.getPlaylistId(url)
+      .then(playlistId => {
+        if (!playlistId) {
+            throw new Error('Invalid YouTube playlist URL');
+        }
+        return this.fetchPlaylistVideoIds(playlistId);
+      })
+      .then(videoIds => {
+        return this.fetchVideosDetails(videoIds, startDate, endDate, fetchTranscript, notifyProgress);
+      })
+      .catch(error => {
+        console.error("Error during playlist details retrieval:", error);
+        throw error;
+      });
+  }
+
+  fetchChannelVideosDetails = async (url: string, startDate?: Date, endDate?: Date,
+    fetchTranscript: boolean = false, notifyProgress: boolean = true): Promise<VideoDetails[]> => {
+    return this.getChannelId(url)
+      .then(channelId => {
+        if (!channelId) {
+            throw new Error('Invalid YouTube channel URL');
+        }
+        return this.fetchChannelVideoIds(channelId);
+      })
+      .then(videoIds => {
+        return this.fetchVideosDetails(videoIds, startDate, endDate, fetchTranscript, notifyProgress);
+      })
+      .catch(error => {
+        console.error("Error during channel details retrieval:", error);
+        throw error;
+      });
+  }
+
+  fetchVideosDetails = async (videoIds: string[], startDate?: Date, endDate?: Date,
+    fetchTranscript: boolean = false, notifyProgress: boolean = true): Promise<VideoDetails[]> => {
+    
     if (videoIds.length === 0) {
       return [];
     }
@@ -107,7 +145,9 @@ class YoutubeApi {
       id: videoIds,
     });
 
-    const videos = response.data.items || [];
+    const videos = response.data.items?.filter(item => {
+      return this.isVideoPublishedInDateRange(item, startDate, endDate);
+    }) || [];
     const videoDetails: VideoDetails[] = [];
 
     for (const video of videos) {
@@ -126,7 +166,7 @@ class YoutubeApi {
         defaultAudioLanguage: video.snippet?.defaultAudioLanguage || '',
         thumbnailUrl: video.snippet?.thumbnails?.maxres?.url || '',
         transcript: fetchTranscript ?
-          await this.fetchVideoSubtitles(videoLink, video.snippet?.defaultAudioLanguage ?? "en") :
+          await this.fetchVideoTranscript(videoLink, video.snippet?.defaultAudioLanguage ?? "en") :
           undefined,
       };
 
@@ -297,7 +337,7 @@ class YoutubeApi {
     }
   }
 
-  fetchVideoSubtitles = async (videoUrl: string, language: string): Promise<TranscriptChunk[] | null> => {
+  fetchVideoTranscript = async (videoUrl: string, language: string): Promise<TranscriptChunk[] | null> => {
     try {
       const videoId = await this.getVideoId(videoUrl);
       if (!videoId) {
@@ -611,6 +651,18 @@ class YoutubeApi {
   private checkUrl(url: string) {
     return url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1;
   }
+
+  private isVideoPublishedInDateRange(
+    item: youtube_v3.Schema$Video, startDate?: Date, endDate?: Date): boolean {
+      if (!item.id || !item.snippet?.publishedAt) return false;
+    if (!item.snippet?.publishedAt) return false;
+
+    const videoPublishedAt = new Date(item.snippet?.publishedAt);
+
+    if (startDate && videoPublishedAt < startDate) return false;
+    if (endDate && videoPublishedAt > endDate) return false;
+    return true;
+  }  
 }
 
 export default YoutubeApi;

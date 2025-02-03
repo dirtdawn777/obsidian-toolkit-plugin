@@ -32,6 +32,29 @@ class TextApi {
     });
     return languages;
   }
+
+  generateFrontmatter = <T extends Record<string, unknown>>(obj: T, properties: string[]): string => {
+    let frontmatter = "---\n";
+    properties.forEach((property) => {
+      if (Object.prototype.hasOwnProperty.call(obj, property)) {
+        const value = obj[property];
+        if (typeof value === 'string') {
+          if (value.includes('"') || value.includes(" ")) {
+            frontmatter += `${property}: '${value}'\n`;
+          } else if (value.includes("'")) {
+            frontmatter += `${property}: "${value}"\n`;
+          } else {
+            frontmatter += `${property}: ${value}\n`;
+          }
+        }
+        else if (typeof value === 'number' || typeof value === 'boolean') {
+          frontmatter += `${property}: ${value}\n`;
+        }
+      }
+    });
+    frontmatter += "---\n";
+    return frontmatter;
+  }
 }
 
 export default TextApi;

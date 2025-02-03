@@ -8,6 +8,14 @@ export type FieldType = 'text' | 'textarea' | 'select' | 'toggle' | 'tag' |
   'folder' | 'dataview' | 'multiselect' | 'file' |
   'document_block' | 'markdown_block' | 'image';
 
+export type FormOptions = {
+    values?: Record<string, unknown>;
+};
+
+export type FormData = {
+  data?: Record<string, unknown>;
+};
+
 export interface OptionDefinition {
   value: string;
   label: string;
@@ -56,7 +64,7 @@ class FormApi {
     this.plugin = plugin;
   }
 
-  loadForm = async (formPath: string): Promise<FormDefinition | null> => {
+  loadForm = async (formPath: string): Promise<FormDefinition> => {
     const fileName = `${formPath}.json`;
     const filePath = normalizePath(fileName);
     const vault: Vault = this.app.vault;
@@ -76,13 +84,37 @@ class FormApi {
         return formDef;
       } catch (error) {
         console.error(`Error during reading file "${fileName}":`, error);
-        throw new Error(`File "${fileName}" is not a valid JSON file.`);
+        throw error;
       }
     } catch (error) {
       console.error(`Error during reading file "${fileName}":`, error);
-      throw new Error(`Error during reading file "${fileName}".`);
+      throw error;
     }
   }
+
+  execModal = async (formPath: string, 
+    exec: (data: FormData) => Promise<void>,
+    options?: FormOptions,
+    prepare?: (form: FormDefinition) => FormDefinition): Promise<void> => {
+    const modalForm = this.app.plugins.plugins.modalforms.api;
+    const formDef = await this.loadForm(formPath)
+      .then((form) => {
+        return prepare ? prepare(form) : form; 
+      })
+      .catch((error) => {
+        console.error(`Error during loading form "${formPath}":`, error);
+        throw error;
+      });
+    try {
+      const result = await modalForm.openForm(formDef, options);
+      if (result.status === 'ok') {
+        await exec(result.data);
+      }
+    } catch (error) {
+      console.error(`Error during opening form "${formPath}":`, error);
+      throw error;
+    }
+  } 
 
   addIso6391LanguageOptions = (form: FormDefinition, fieldName: string): FormDefinition => {
     const field = form.fields.find((field) => 

@@ -6,6 +6,7 @@ import YoutubeApi from "./youtube/youtube-client";
 import FileApi from "./file/file";
 import TextApi from "./text/text";
 import FormApi from "./form/form";
+import AiApi from "./ai/ai";
 
 export default class ToolkitPlugin extends Plugin {
   settings: ToolkitSettings = DEFAULT_SETTINGS;
@@ -13,6 +14,7 @@ export default class ToolkitPlugin extends Plugin {
   public fileApi!: FileApi;
   public textApi!: TextApi;
   public formApi!: FormApi;
+  public aiApi!: AiApi;
 
   async onload() {
     console.log('Loading Toolkit plugin');
@@ -23,6 +25,7 @@ export default class ToolkitPlugin extends Plugin {
     this.fileApi = new FileApi(this.app);
     this.textApi = new TextApi(this.app);
     this.formApi = new FormApi(this.app, this);
+    this.aiApi = new AiApi(this.app);
   }
 
   onunload() {

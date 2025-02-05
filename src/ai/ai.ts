@@ -1,7 +1,16 @@
 import { App, Notice } from 'obsidian';
-import {}
-export type ModelProvider = 'openai';
+import { createOpenAI, OpenAIProvider } from '@ai-sdk/openai'
+//import { Provider } from 'ai';
+import { generateText, LanguageModel } from 'ai';
 
+
+export type Provider = 'openai';
+
+export interface ProviderApiKeys {
+  apiKeys: Record<Provider, string>;
+}
+
+/*
 export type ModelType = 'chat' | 'completion' | 'embedding';
 
 export type StreamingOptions = {
@@ -27,7 +36,7 @@ export interface ChatModel extends Model {
 }
 
 export interface EmbeddingModel {
-  embed(input: string | string[], options?: BaseModelParams): Promise<number[]>;
+  embed(input: string | string[], options?: Provider): Promise<number[]>;
 }
 
 export interface CoreModel {
@@ -52,29 +61,40 @@ export interface LlmOptions {
 export interface Llm {
   generate (tp: unknown, prompt: string, options: LlmOptions): Promise<string>;
 }
-
-class AiApi implements Llm {
+*/
+class AiApi {
   private app: App;
+  private openai: OpenAIProvider;
+  private providerApiKeys: ProviderApiKeys;
 
-  constructor(app: App) {
+  private modelFactories: {
+    [providerModelType: string]: LanguageModel;
+  } = {};
+
+  constructor(app: App, providerApiKeys: ProviderApiKeys) {
     this.app = app;
+    this.providerApiKeys = providerApiKeys;
   }
 
-  generate = async (tp: unknown, prompt: string, options: LlmOptions): Promise<string> => {
-    try {
-      const result = await tp.ai.chat(
-        prompt,
-        options.model,
-        options.systemPrompt,
-        options.maxReturnTokens,
-        options.maxOutgoingCharacters
-      );
-      return result;
-    } catch (e) {
-      console.error(e);
-      new Notice(`Error generating text: ${e}`);
-      throw e; 
-    }  
+  createOpenAI = () => {
+    this.openai = createOpenAI({
+      apiKey: this.providerApiKeys.apiKeys['openai'],
+      compatibility: 'strict',
+    });
+    this.modelFactories['openai:chat'] = this.openai.chat('gpt-4');
+  }
+
+  chat = async (model: string, prompt: string) => {
+    const m = this.modelFactories[model];
+    if (!m) {
+      new Notice(`Model ${model} not found`);
+      return;
+    }
+    const { text } = await generateText({
+      model: m,
+      prompt: prompt,
+    });
+    return text;
   }
 }
 

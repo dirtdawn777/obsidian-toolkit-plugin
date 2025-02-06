@@ -1,19 +1,13 @@
 import { openai, createOpenAI } from '@ai-sdk/openai';
+import { AIProviderConfig, AIProviderChat, AIProviderSettings } from './client';
 
-export default class OpenAi {
-  private apiKey: string;
+export default class OpenAi implements AIProviderConfig {
   private api: typeof openai;
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  configure(settings: AIProviderSettings): void {
     this.api = createOpenAI({
-      apiKey: this.apiKey,
-      compatibility: 'strict'
+      apiKey: settings.apiKey,
+      compatibility: 'strict',
     });
-  }
-
-  listAvailableModels = async () => {
-    const openaiModels = Object.keys(openai.);
-    return this.api.listModels();
   }
 }

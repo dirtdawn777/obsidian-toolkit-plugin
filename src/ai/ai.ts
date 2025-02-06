@@ -1,14 +1,8 @@
 import { App, Notice } from 'obsidian';
-import { createOpenAI, OpenAIProvider } from '@ai-sdk/openai'
-//import { Provider } from 'ai';
 import { generateText, LanguageModel } from 'ai';
+import { AIProvidersSettings } from './provider/client'; 
+import AIClient from './provider/client'; 
 
-
-export type Provider = 'openai';
-
-export interface ProviderApiKeys {
-  apiKeys: Record<Provider, string>;
-}
 
 /*
 export type ModelType = 'chat' | 'completion' | 'embedding';
@@ -64,25 +58,20 @@ export interface Llm {
 */
 class AiApi {
   private app: App;
-  private openai: OpenAIProvider;
-  private providerApiKeys: ProviderApiKeys;
+  private client: AIClient;
 
   private modelFactories: {
     [providerModelType: string]: LanguageModel;
   } = {};
 
-  constructor(app: App, providerApiKeys: ProviderApiKeys) {
+  constructor(app: App) {
     this.app = app;
-    this.providerApiKeys = providerApiKeys;
   }
 
-  createOpenAI = () => {
-    this.openai = createOpenAI({
-      apiKey: this.providerApiKeys.apiKeys['openai'],
-      compatibility: 'strict',
-    });
-    this.modelFactories['openai:chat'] = this.openai.chat('gpt-4');
-  }
+  configure = (providersSettings: AIProvidersSettings): void => {
+    this.client = new AIClient(providersSettings);
+    this.client.configure();
+  };
 
   chat = async (model: string, prompt: string) => {
     const m = this.modelFactories[model];

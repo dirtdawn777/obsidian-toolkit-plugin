@@ -1,68 +1,10 @@
 import { App, Notice } from 'obsidian';
-import { generateText, LanguageModel } from 'ai';
-import { AIProvidersSettings } from './provider/client'; 
+import { AIProvider, AIProvidersSettings } from './provider/client'; 
 import AIClient from './provider/client'; 
 
-
-/*
-export type ModelType = 'chat' | 'completion' | 'embedding';
-
-export type StreamingOptions = {
-  enabled: boolean;
-  onToken?: (token: string) => void;
-};
-
-export type BaseModelParams = {
-  provider: ModelProvider;
-  model: string;
-  temperature?: number;
-  maxTokens?: number;
-};
-
-export interface Model {
-  generate(input: string, options?: BaseModelParams): Promise<string>;
-  generateStream(input: string, options?: BaseModelParams & StreamingOptions): AsyncGenerator<string>;
-}
-
-export interface ChatModel extends Model {
-  chat(messages: Array<{role: 'user' | 'assistant' | 'system', content: string}>, options?: BaseModelParams): Promise<string>;
-  chatStream(messages: Array<{role: 'user' | 'assistant' | 'system', content: string}>, options?: BaseModelParams & StreamingOptions): AsyncGenerator<string>;
-}
-
-export interface EmbeddingModel {
-  embed(input: string | string[], options?: Provider): Promise<number[]>;
-}
-
-export interface CoreModel {
-  generateText(input: string, options?: BaseModelParams): Promise<string>;
-  streamText(input: string, options?: BaseModelParams & StreamingOptions): AsyncGenerator<string>;
-  generateObject<T>(input: string, options?: BaseModelParams): Promise<T>;
-  streamObject<T>(input: string, options?: BaseModelParams & StreamingOptions): AsyncGenerator<T>;
-}
-
-export interface Provider {
-  modelProvider: ModelProvider;
-  chat: (input: string, model: string, systemPrompt?: string, maxReturnTokens?: number, maxOutgoingCharacters?: number) => Promise<string>;
-}
-
-export interface LlmOptions {
-  model: string,
-  systemPrompt?: string,
-  maxReturnTokens?: number,
-  maxOutgoingCharacters?: number
-}
-
-export interface Llm {
-  generate (tp: unknown, prompt: string, options: LlmOptions): Promise<string>;
-}
-*/
 class AiApi {
   private app: App;
   private client: AIClient;
-
-  private modelFactories: {
-    [providerModelType: string]: LanguageModel;
-  } = {};
 
   constructor(app: App) {
     this.app = app;
@@ -73,17 +15,49 @@ class AiApi {
     this.client.configure();
   };
 
-  chat = async (model: string, prompt: string) => {
-    const m = this.modelFactories[model];
-    if (!m) {
-      new Notice(`Model ${model} not found`);
-      return;
+  startChat = (provider: AIProvider, modelId: string, settings?: Record<string, unknown>): string => {
+    try {
+      return this.client.startChat(provider, modelId, settings);
+    } catch (error) {
+      new Notice(`Failed to start chat with AI: ${error instanceof Error ? error.message : String(error)}`);
+      return '';
     }
-    const { text } = await generateText({
-      model: m,
-      prompt: prompt,
-    });
-    return text;
+  }
+
+  chat = async (chatId: string, request: Record<string, unknown>): Promise<string> => {
+    try {
+      return await this.client.chat(chatId, request);
+    } catch (error) {
+      new Notice(`Failed to chat with AI: ${error instanceof Error ? error.message : String(error)}`);
+      return '';
+    }
+  }
+
+  embed = async (provider: AIProvider, modelId: string, value: string, options?: Record<string, unknown>): Promise<number[]> => {
+    try {
+      return await this.client.embed(provider, modelId, value, options);
+    } catch (error) {
+      new Notice(`Failed to embed with AI: ${error instanceof Error ? error.message : String(error)}`);
+      return [];
+    }
+  }
+  
+  embedMany = async (provider: AIProvider, modelId: string, values: string[], options?: Record<string, unknown>): Promise<number[][]> => {
+    try {
+      return await this.client.embedMany(provider, modelId, values, options);
+    } catch (error) {
+      new Notice(`Failed to embed many with AI: ${error instanceof Error ? error.message : String(error)}`);
+      return [];
+    }
+  }
+
+  similarity = (p: number[], q: number[], options?: Record<string, unknown>): number => {
+    try {
+      return this.client.similarity(p, q, options);
+    } catch (error) {
+      new Notice(`Failed to calculate similarity: ${error instanceof Error ? error.message : String(error)}`);
+      return 0;
+    }
   }
 }
 

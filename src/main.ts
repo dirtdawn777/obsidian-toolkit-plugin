@@ -8,6 +8,8 @@ import TextApi from "./text/text";
 import FormApi from "./form/form";
 import AiApi from "./ai/ai";
 
+import mlDistance from './math/ml-dist';
+
 export default class ToolkitPlugin extends Plugin {
   settings: ToolkitSettings = DEFAULT_SETTINGS;
   public youtubeApi!: YoutubeApi;
@@ -15,6 +17,8 @@ export default class ToolkitPlugin extends Plugin {
   public textApi!: TextApi;
   public formApi!: FormApi;
   public aiApi!: AiApi;
+  public distance = mlDistance.distance;
+  public similarity = mlDistance.similarity;
 
   async onload() {
     console.log('Loading Toolkit plugin');

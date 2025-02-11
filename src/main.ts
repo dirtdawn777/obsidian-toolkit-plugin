@@ -9,6 +9,7 @@ import FormApi from "./form/form";
 import AiApi from "./ai/ai";
 
 import mlDistance from './math/ml-dist';
+import aiSdk from './ai/ai-sdk';
 
 export default class ToolkitPlugin extends Plugin {
   settings: ToolkitSettings = DEFAULT_SETTINGS;
@@ -19,6 +20,7 @@ export default class ToolkitPlugin extends Plugin {
   public aiApi!: AiApi;
   public distance = mlDistance.distance;
   public similarity = mlDistance.similarity;
+  public aiSdk = aiSdk;
 
   async onload() {
     console.log('Loading Toolkit plugin');

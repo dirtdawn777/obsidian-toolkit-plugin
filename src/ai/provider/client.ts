@@ -1,7 +1,8 @@
 import OpenAi from "./openai";
+import Anthropic from "./anthropic";
 import { generateText, LanguageModel, CoreMessage, embed, embedMany, cosineSimilarity, EmbeddingModel } from 'ai';
 
-export type AIProvider = 'openai';
+export type AIProvider = 'openai' | 'anthropic';
 
 export type AIProviderSettings = {
   apiKey: string;
@@ -24,17 +25,22 @@ export interface AIProviderEmbed {
   embedding(modelId: string): EmbeddingModel<string>;
 }
 
+export interface AIProviderModel {
+  getModel(modelId: string, settings?: Record<string, unknown>): LanguageModel | EmbeddingModel<string>;
+}
+
 class AIClient {
   private providersSettings: AIProvidersSettings;
   private providerInstances: 
     Record<
       AIProvider, 
-      AIProviderConfig & AIProviderChat & AIProviderEmbed
+      AIProviderConfig & AIProviderChat & AIProviderEmbed & AIProviderModel
     > = {
       openai: new OpenAi(),
+      anthropic: new Anthropic(),
     };
   private chatModelCache: Record<string, AIProviderChat> = {};
-  private modelCache: Record<string, LanguageModel> = {};
+  private modelCache: Record<string, LanguageModel | EmbeddingModel<string>> = {};
   private chatCache: Record<string, [model: string, messages: CoreMessage[]]> = {};
 
   constructor(providersSettings: AIProvidersSettings) {
@@ -44,8 +50,21 @@ class AIClient {
   configure = (): void => {
     for (const [provider, settings] of Object.entries(this.providersSettings.settings)) {
       const providerConfig: AIProviderConfig = this.providerInstances[provider as AIProvider];
-      providerConfig.configure(settings);
+      if (providerConfig)
+        providerConfig.configure(settings);
     }
+  }
+  getModel = (provider: AIProvider, modelId: string, settings?: Record<string, unknown>): LanguageModel | EmbeddingModel<string> => {
+    const providerModel: AIProviderModel = this.providerInstances[provider];
+    if (!providerModel) {
+      throw new Error(`Provider ${provider} configuration not found. Ensure it's initialized.`);
+    }
+
+    const cacheId = `model:${modelId}`;
+    if (!this.modelCache[cacheId]) {
+      this.modelCache[cacheId] = providerModel.getModel(modelId, settings); 
+    }
+    return this.modelCache[cacheId];
   }
 
   startChat = (provider: AIProvider, modelId: string, settings?: Record<string, unknown>): string => {
@@ -70,6 +89,10 @@ class AIClient {
       throw new Error(`Chat ${chatId} not found. Ensure it's initialized.`);
     }
 
+    if (!('doGenerate' in this.modelCache[model])) {
+      throw new Error(`Model ${model} is not a LanguageModel.`);
+    }
+
     if (!request.messages) {
       request.messages = [...messages, { role: 'user', content: request.prompt! }];
     }
@@ -77,7 +100,7 @@ class AIClient {
     request.prompt = undefined;
 
     const result = await generateText({
-      model: this.modelCache[model],
+      model: this.modelCache[model] as LanguageModel,
       ...request
     });
 

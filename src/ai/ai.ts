@@ -1,6 +1,7 @@
 import { App, Notice } from 'obsidian';
 import { AIProvider, AIProvidersSettings } from './provider/client'; 
 import AIClient from './provider/client'; 
+import { EmbeddingModel, LanguageModel } from 'ai';
 
 class AiApi {
   private app: App;
@@ -14,6 +15,15 @@ class AiApi {
     this.client = new AIClient(providersSettings);
     this.client.configure();
   };
+
+  getModel = (provider: AIProvider, modelId: string, settings?: Record<string, unknown>): LanguageModel | EmbeddingModel<string> => {
+    try {
+      return this.client.getModel(provider, modelId, settings);
+    } catch (error) {
+      new Notice(`Failed to get model with AI: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
 
   startChat = (provider: AIProvider, modelId: string, settings?: Record<string, unknown>): string => {
     try {

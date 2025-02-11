@@ -1,15 +1,18 @@
-import { openai, createOpenAI } from '@ai-sdk/openai';
+import { anthropic, createAnthropic } from '@ai-sdk/anthropic';
 import { LanguageModel,EmbeddingModel } from 'ai';
 import { AIProviderConfig, AIProviderChat, 
          AIProviderEmbed, AIProviderModel, AIProviderSettings } from './client';
 
-export default class OpenAi implements AIProviderConfig, AIProviderChat, AIProviderEmbed, AIProviderModel {
-  private api: typeof openai;
+export default class Anthropic implements AIProviderConfig, AIProviderChat, AIProviderEmbed, AIProviderModel {
+  private api: typeof anthropic;
 
   configure = (settings: AIProviderSettings): void => {
-    this.api = createOpenAI({
+    this.api = createAnthropic({
       apiKey: settings.apiKey,
-      compatibility: 'strict',
+      headers: {
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      fetch: undefined        
     });
   }
 
@@ -18,10 +21,10 @@ export default class OpenAi implements AIProviderConfig, AIProviderChat, AIProvi
   }
 
   chat = (modelId: string, settings?: Record<string, unknown>): LanguageModel => {
-    return this.api.chat(modelId, settings);
+    return this.api.languageModel(modelId, settings);
   }
 
   embedding = (modelId: string): EmbeddingModel<string> => {
-    return this.api.embedding(modelId);
+    throw new Error('Unsupported functionality.');
   }
 }

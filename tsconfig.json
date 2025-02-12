@@ -6,9 +6,10 @@
     ],
     "inlineSourceMap": true,
     "inlineSources": true,
-    "module": "ESNext",
-    "target": "ES6",
+    "module": "es2022",
+    "target": "ES2022",
     "allowJs": true,
+    "strict": true,
     "noImplicitAny": true,
     "moduleResolution": "bundler",
     "importHelpers": true,
@@ -21,8 +22,10 @@
       "ES7"
     ]
   },
+  "reflection": true,
   "include": [
     "**/*.ts",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/global.d.ts"
   ]
 }

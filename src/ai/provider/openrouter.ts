@@ -1,19 +1,15 @@
-import { anthropic, createAnthropic } from '@ai-sdk/anthropic';
-import { LanguageModel,EmbeddingModel } from 'ai';
+import { openrouter, createOpenRouter  } from '@openrouter/ai-sdk-provider';
+import { LanguageModel, EmbeddingModel } from 'ai';
 import { AIProviderConfig, AIProviderChat, 
          AIProviderEmbed, AIProviderModel, AIProviderSettings } from './client';
 
-export default class Anthropic implements AIProviderConfig, AIProviderChat, AIProviderEmbed, AIProviderModel {
-  private api: typeof anthropic;
+export default class OpenAi implements AIProviderConfig, AIProviderChat, AIProviderEmbed, AIProviderModel {
+  private api: typeof openrouter;
 
   configure = (settings: AIProviderSettings): void => {
-    this.api = createAnthropic({
+    this.api = createOpenRouter ({
       apiKey: settings.apiKey,
-      headers: {
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-
-      fetch: undefined        
+      compatibility: 'strict',
     });
   }
 
@@ -25,7 +21,8 @@ export default class Anthropic implements AIProviderConfig, AIProviderChat, AIPr
     return this.api.languageModel(modelId, settings);
   }
 
-  embedding = (modelId: string, settings?: Record<string, unknown>): EmbeddingModel<string> => {
+  embedding = (modelId: string): EmbeddingModel<string> => {
     throw new Error('Unsupported functionality.');
+
   }
 }

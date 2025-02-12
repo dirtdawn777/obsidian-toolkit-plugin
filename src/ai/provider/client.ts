@@ -1,11 +1,17 @@
 import OpenAi from "./openai";
 import Anthropic from "./anthropic";
+import Google from "./google";
+import Groq from "./groq";
+import Openrouter from "./openrouter";
+import Ollama from "./ollama";
+import LmStudio from "./lmstudio";
 import { generateText, LanguageModel, CoreMessage, embed, embedMany, cosineSimilarity, EmbeddingModel } from 'ai';
 
-export type AIProvider = 'openai' | 'anthropic';
+export type AIProvider = 'openai' | 'anthropic' | 'google' | 'groq' | 'openrouter' | 'ollama' | 'lmstudio';
 
 export type AIProviderSettings = {
   apiKey: string;
+  baseURL?: string;
   options?: Record<string, unknown>;
 };
 
@@ -22,7 +28,7 @@ export interface AIProviderChat {
 }
 
 export interface AIProviderEmbed {
-  embedding(modelId: string): EmbeddingModel<string>;
+  embedding(modelId: string, settings?: Record<string, unknown>): EmbeddingModel<string>;
 }
 
 export interface AIProviderModel {
@@ -38,6 +44,11 @@ class AIClient {
     > = {
       openai: new OpenAi(),
       anthropic: new Anthropic(),
+      google: new Google(),
+      groq: new Groq(),
+      openrouter: new Openrouter(),
+      ollama: new Ollama(),
+      lmstudio: new LmStudio(),
     };
   private chatModelCache: Record<string, AIProviderChat> = {};
   private modelCache: Record<string, LanguageModel | EmbeddingModel<string>> = {};
@@ -108,14 +119,14 @@ class AIClient {
     return result.text;
   }
 
-  embed = async (provider: AIProvider, modelId: string, value: string, options?: Record<string, unknown>): Promise<number[]> => {
+  embed = async (provider: AIProvider, modelId: string, value: string, settings?: Record<string, unknown>, options?: Record<string, unknown>): Promise<number[]> => {
     const providerEmbed: AIProviderEmbed = this.providerInstances[provider];
     if (!providerEmbed) {
       throw new Error(`Provider ${provider} configuration not found. Ensure it's initialized.`);
     }
 
     const { embedding } = await embed({ 
-      model: providerEmbed.embedding(modelId), 
+      model: providerEmbed.embedding(modelId, settings), 
       value: value,
       ...options
     });
@@ -123,14 +134,14 @@ class AIClient {
     return embedding;
   }
 
-  embedMany = async (provider: AIProvider, modelId: string, values: string[], options?: Record<string, unknown>): Promise<number[][]> => {
+  embedMany = async (provider: AIProvider, modelId: string, values: string[], settings?: Record<string, unknown>, options?: Record<string, unknown>): Promise<number[][]> => {
     const providerEmbed: AIProviderEmbed = this.providerInstances[provider];
     if (!providerEmbed) {
       throw new Error(`Provider ${provider} configuration not found. Ensure it's initialized.`);
     }
 
     const { embeddings } = await embedMany({ 
-      model: providerEmbed.embedding(modelId), 
+      model: providerEmbed.embedding(modelId, settings), 
       values: values,
       ...options
     });

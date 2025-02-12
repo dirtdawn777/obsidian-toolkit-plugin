@@ -5,6 +5,10 @@
 *.iml
 .idea
 
+# python
+__pycache__
+venv
+
 # npm
 node_modules
 package-lock.json

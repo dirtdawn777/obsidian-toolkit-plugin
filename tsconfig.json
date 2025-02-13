@@ -10,8 +10,9 @@
     "target": "ES2022",
     "allowJs": true,
     "strict": true,
+    "esModuleInterop": true,
     "noImplicitAny": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
@@ -25,7 +26,6 @@
   "reflection": true,
   "include": [
     "**/*.ts",
-    "src/**/*.ts",
-    "src/global.d.ts"
+    "src/**/*.ts"
   ]
 }

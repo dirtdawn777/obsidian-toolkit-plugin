@@ -1,22 +1,45 @@
-import { PythonBridge } from 'pybridge';
 
-// Crea un'istanza di PyBridge
-const bridge = new PythonBridge({ python: 'python3', cwd: __dirname });
+import { App } from 'obsidian';
+import { PyBridge, RemoteController } from 'pybridge';
+//import { python } from "pythonia";
 
-// Definisci l'interfaccia per le funzioni Python
 interface PythonAPI {
-  somma(a: number, b: number): number;
+  sum(a: number, b: number): number;
 }
 
-// Crea un controller per il file Python
-const python = bridge.controller<PythonAPI>('script.py')!;
-
-// Usa la funzione Python
-async function main() {
-  const risultato = await python.somma(5, 3);
-  console.log(`Il risultato della somma è: ${risultato}`);
-  bridge.close();
+class PythonController {
+  public script: RemoteController<PythonAPI>;
+  
+  constructor(protected python: PyBridge) {
+    const code = 
+    `def sum(a: int, b: int) -> int:
+      return a + b`;
+    this.script = this.python.controller<PythonAPI>(code);
+  }
 }
 
-main();
+class TestApi {
+  private app: App;
+  private bridge: PyBridge;
 
+  constructor(app: App) {
+    this.app = app;
+    this.bridge = new PyBridge({ python: 'python', cwd: __filename });
+  }
+
+  test = async (): Promise<number> => {
+    
+    const controller = new PythonController(this.bridge);
+    const result: number = await controller.script.sum(5, 3);
+    console.log(`The result of the sum is: ${result}`);
+    this.bridge.close();
+    /*
+    python.cwd('\\Users\\abaroni\\Documents\\Obsidian Test Vault\\.obsidian\\plugins\\obsidian-toolkit-plugin\\src\\python');
+    const result = await python('\\Users\\abaroni\\Documents\\Obsidian Test Vault\\.obsidian\\plugins\\obsidian-toolkit-plugin\\src\\python\\script.py');
+    const x = await result.sum(5,3);
+    python.exit();*/
+    return result;
+  }
+}
+
+export default TestApi;

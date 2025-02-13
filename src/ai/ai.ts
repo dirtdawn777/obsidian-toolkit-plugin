@@ -5,7 +5,7 @@ import { EmbeddingModel, LanguageModel } from 'ai';
 
 class AiApi {
   private app: App;
-  private client: AIClient;
+  private client!: AIClient;
 
   constructor(app: App) {
     this.app = app;

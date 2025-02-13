@@ -7,6 +7,7 @@ import FileApi from "./file/file";
 import TextApi from "./text/text";
 import FormApi from "./form/form";
 import AiApi from "./ai/ai";
+import TestApi from "./python/test";
 
 import mlDistance from './math/ml-dist';
 import aiSdk from './ai/ai-sdk';
@@ -18,10 +19,11 @@ export default class ToolkitPlugin extends Plugin {
   public textApi!: TextApi;
   public formApi!: FormApi;
   public aiApi!: AiApi;
+  public testApi!: TestApi;
   public distance = mlDistance.distance;
   public similarity = mlDistance.similarity;
   public aiSdk = aiSdk;
-
+  
   async onload() {
     console.log('Loading Toolkit plugin');
     await this.loadSettings();
@@ -32,6 +34,7 @@ export default class ToolkitPlugin extends Plugin {
     this.textApi = new TextApi(this.app);
     this.formApi = new FormApi(this.app, this);
     this.aiApi = new AiApi(this.app);
+    this.testApi = new TestApi(this.app);
   }
 
   onunload() {

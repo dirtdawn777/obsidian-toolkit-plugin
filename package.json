@@ -34,6 +34,7 @@
     "iso-639-3": "^3.0.1",
     "ml-distance": "^4.0.1",
     "obsidian": "latest",
+    "pythonia": "^1.2.2",
     "rimraf": "latest",
     "tslib": "latest",
     "tsx": "^4.19.2",
@@ -51,5 +52,6 @@
     "@openrouter/ai-sdk-provider": "^0.2.1",
     "ollama-ai-provider": "^1.2.0",
     "pybridge": "^1.4.0"
-  }
+  },
+  "type": "module"
 }

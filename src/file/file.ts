@@ -22,6 +22,12 @@ class FileApi {
     return filename.replace(invalidChars, '_');
   }
 
+  vaultToAbsolutePath = (vaultPath: string): string => {
+    const folder = this.app.vault.getAbstractFileByPath(vaultPath) as TFile;
+    const path = this.app.vault.getResourcePath(folder);
+    return decodeURIComponent(path.replace(/^app:\/\/[^/]+\//, '/').split('?')[0]);
+  }
+
   obtainFolder = async (path: string): Promise<TFolder | null> => {
     let folder = this.app.vault.getFolderByPath(path);
     if (!folder) {
